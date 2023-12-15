@@ -1,0 +1,5 @@
+Debloat Windows with a Lua script lol
+
+Setup for Windows:
+winget install DEVCOM.Lua
+lua main.lua
