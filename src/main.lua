@@ -6,10 +6,7 @@
 -- Lua 5.4.6  Copyright (C) 1994-2023 Lua.org, PUC-Rio
 
 --Removes Calculator, Notepad, Snipping Tool, and Paint
-local RemoveExtras = true
-
---Uses App id's instead of names (extra computing time)
-local UseAppIDs = true
+local RemoveExtras = false
 
 local Packages = {
 	"skype",
@@ -66,8 +63,8 @@ local ExtraPackages = {
 local s_gmatch = string.gmatch
 local s_gsub = string.gsub
 
-local t_insert = table.insert
 local t_move = table.move
+local t_insert = table.insert
 local t_concat = table.concat
 
 local i_popen = io.popen
@@ -95,9 +92,8 @@ local function GetApplicationID(io_popen, PackageName)
 	--My faster split algorithm
 	local ID = nil
 	local CutInfo = AppName and s_gsub(AppName, '%s[%d%p]+$', '')
-	print(CutInfo)
 	if CutInfo then
-		ID = s_gsub(CutInfo, '^['..PackageName..']+%s?', '')
+		ID = CutInfo:sub(#PackageName, #CutInfo)
 	end
 	return ID
 end
@@ -106,35 +102,44 @@ if RemoveExtras then
 	t_move(ExtraPackages, 1, #ExtraPackages, #Packages+1, Packages)
 end
 
-if UseAppIDs then
-	print("-> UseAppIDs mode is ON, this will take longer...\n")
-
-	ForEachPackage(function(i, Package)
-		local popen_list = i_popen("winget list "..Package.."", 'r'):read('a')
-
-		if popen_list:lower():find("no installed") then
-			print("Package: \""..Package.."\" not installed (Skipping)")
-		else
-			local ApplicationID = GetApplicationID(popen_list, Packages[i])
-			if ApplicationID then
-				local PreviousName = Package
-				Packages[i] = ApplicationID
-				print(PreviousName, "->", Packages[i])
-			else
-				print("\n[ERROR]: Failed to get the Application ID for:", Package, "got:", ApplicationID, '\n')
-			end
-		end
-	end)
-end
-
---Parse all the entires
+--Parse all the entries
 ForEachPackage(function(i, Package)
 	Packages[i] = "\""..Package.."\""
 end)
-print(t_concat(Packages, ',\n'))
+
+print("-> Getting the application ID's...\n")
+
+ForEachPackage(function(i, Package)
+	local popen_list = i_popen("winget list "..Package.."", 'r'):read('a')
+
+	if popen_list:lower():find("no installed package") then
+		Packages[i] = nil --nil and NOT table.remove
+		print("Package: "..Package.." is not installed")
+	else
+		local ApplicationID = GetApplicationID(popen_list, Package)
+		if ApplicationID then
+			local PreviousName = Package
+			Packages[i] = ApplicationID
+			print(PreviousName.."\t\t->\t"..Packages[i])
+		else
+			print("\n[ERROR]: Failed to get the Application ID for:", Package, "got:", ApplicationID, '\n')
+		end
+	end
+end)
+
+--Clean the package array of not installed applications
+local Installed_Packages = {}
+ForEachPackage(function(_, Package)
+	if Package then --Does not equal nil which means the user does not have the package installed
+		t_insert(Installed_Packages, Package)
+	end
+end)
+
+print('\n'..t_concat(Installed_Packages, ',\n'))
 print("\n-> Starting bloat remover...\n")
 
--- ForEachPackage(function(i, Package)
+-- for i = 1, #Installed_Packages do
+-- 	local Package = Installed_Packages[i]
 -- 	print("["..tostring(i).."/"..#Packages.."]: "..Package.."")
 -- 	o_execute("winget uninstall "..Package)
--- end)
+-- end
