@@ -8,6 +8,8 @@
 --Removes Calculator, Notepad, Snipping Tool, and Paint
 local RemoveExtras = false
 
+local UsingIDs = false --Experimental
+
 local Packages = {
 	"skype",
 	"onedrive",
@@ -35,7 +37,7 @@ local Packages = {
 	"Quick Assist",
 	"Microsoft People",
 	"Solitaire & Casual Games",
-	"Spotify Music", --Please stop using this very smelly shit
+	"Spotify Music",
 	"Sound Recorder",
 	"Sticky Notes",
 	"Weather",
@@ -109,37 +111,39 @@ end)
 
 print("-> Getting the application ID's...\n")
 
-ForEachPackage(function(i, Package)
-	local popen_list = i_popen("winget list "..Package.."", 'r'):read('a')
+if UsingIDs then
+	ForEachPackage(function(i, Package)
+		local popen_list = i_popen("winget list "..Package.."", 'r'):read('a')
 
-	if popen_list:lower():find("no installed package") then
-		Packages[i] = nil --nil and NOT table.remove
-		print("Package: "..Package.." is not installed")
-	else
-		local ApplicationID = GetApplicationID(popen_list, Package)
-		if ApplicationID then
-			local PreviousName = Package
-			Packages[i] = ApplicationID
-			print(PreviousName.."\t\t->\t"..Packages[i])
+		if popen_list:lower():find("no installed package") then
+			Packages[i] = nil --nil and NOT table.remove
+			print("Package: "..Package.." is not installed")
 		else
-			print("\n[ERROR]: Failed to get the Application ID for:", Package, "got:", ApplicationID, '\n')
+			local ApplicationID = GetApplicationID(popen_list, Package)
+			if ApplicationID then
+				local PreviousName = Package
+				Packages[i] = ApplicationID
+				print(PreviousName.."\t\t->\t"..Packages[i])
+			else
+				print("\n[ERROR]: Failed to get the Application ID for:", Package, "got:", ApplicationID, '\n')
+			end
 		end
-	end
-end)
+	end)
 
---Clean the package array of not installed applications
-local Installed_Packages = {}
-ForEachPackage(function(_, Package)
-	if Package then --Does not equal nil which means the user does not have the package installed
-		t_insert(Installed_Packages, Package)
-	end
-end)
+	--Clean the package array of not installed applications
+	local Installed_Packages = {}
+	ForEachPackage(function(_, Package)
+		if Package then --Does not equal nil which means the user does not have the package installed
+			t_insert(Installed_Packages, Package)
+		end
+	end)
+end
 
-print('\n'..t_concat(Installed_Packages, ',\n'))
+print('\n'..t_concat(Packages, ',\n'))
 print("\n-> Starting bloat remover...\n")
 
--- for i = 1, #Installed_Packages do
--- 	local Package = Installed_Packages[i]
--- 	print("["..tostring(i).."/"..#Packages.."]: "..Package.."")
--- 	o_execute("winget uninstall "..Package)
--- end
+for i = 1, #Packages do
+	local Package = Packages[i]
+	print("["..tostring(i).."/"..#Packages.."]: "..Package.."")
+	o_execute("winget uninstall "..Package)
+end
