@@ -52,7 +52,8 @@ local Packages = {
 	"Game Bar",
 	"Get Help",
 	"Microsoft Tips",
-	"Phone Link"
+	"Phone Link",
+	"Outlook for Windows"
 }
 
 local ExtraPackages = {
