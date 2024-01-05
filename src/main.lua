@@ -18,7 +18,7 @@ local Packages = {
 	"Camera",
 	"Cortana",
 	"Feedback Hub",
-	"Maps",
+	"Windows Maps",
 	"Media Player",
 	"Microsoft 365 (Office)",
 	"Mail and Calendar",
